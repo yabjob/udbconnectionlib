@@ -1,9 +1,10 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) UDB Connection Library contributors.
- * See the LICENSE file in the project root for license information.
- */
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 Yuri Boltovski
+Author: Yuri Boltovski yabjob@gmail.com
+This file is part of the UDB Connection Library.
+See the project LICENSE file for license terms.
+NOTE: This header was added/verified by Yuri Boltovski. */
 package udblib.sql;
 
 import java.util.Properties;
@@ -20,44 +21,44 @@ import udblib.IDatabaseConnParams;
  * @since 2.1.0
  */
 public class sqlConnParams implements IDatabaseConnParams {
-	//private static final long serialVersionUID = 1L;
-	
-	
-	private   String      		key                		= null;
-    private   int         			dbType             	= 0;
-    private   String      		driverClassName	= null;
-    private   String      		dbUrl              		= null;
-    private   String      		login              		= null;
-    private   String      		passw              		= null;
-    private   boolean     	sqlToLowerCase    = false;
-    private   Properties  		connProps          	= null;
+    //private static final long serialVersionUID = 1L;
+    
+    
+    private   String              key                 = null;
+    private   int                 dbType              = 0;
+    private   String              driverClassName = null;
+    private   String              dbUrl                   = null;
+    private   String              login                   = null;
+    private   String              passw                   = null;
+    private   boolean             sqlToLowerCase    = false;
+    private   Properties          connProps           = null;
 
 
 
     public sqlConnParams( String aKey, int aDbType, String aDriverClassName,
-                         		 String aDbUrl, String aLogin, String aPassw,
-                         		 boolean aSqlToLowerCase,  Properties aConnProps ) {
-	    
-        key               		= aKey;
-        dbType            		= aDbType;
-        driverClassName	= aDriverClassName;
-        dbUrl            		    = aDbUrl;
-        login             		= aLogin;
-        passw             		= aPassw;
+                              String aDbUrl, String aLogin, String aPassw,
+                              boolean aSqlToLowerCase,  Properties aConnProps ) {
+        
+        key                       = aKey;
+        dbType                = aDbType;
+        driverClassName   = aDriverClassName;
+        dbUrl                  = aDbUrl;
+        login                  = aLogin;
+        passw                  = aPassw;
         sqlToLowerCase    = aSqlToLowerCase;
-        connProps         	= aConnProps;
+        connProps              = aConnProps;
     }
 
     
     public sqlConnParams(String aKey, IDatabaseConnParams cp) {
-        key               		= aKey;
-        dbType            		= cp.getType();
+        key                       = aKey;
+        dbType                = cp.getType();
         driverClassName   = cp.getDriverClassName();
-        dbUrl             		= cp.getDbUrl();
-        login             		= cp.getLogin();
-        passw             		= cp.getPassw();
+        dbUrl                  = cp.getDbUrl();
+        login                  = cp.getLogin();
+        passw                  = cp.getPassw();
         sqlToLowerCase    = cp.getSqlToLowerCase();
-        connProps         	= cp.getConnProps();
+        connProps              = cp.getConnProps();
     }
 
 
