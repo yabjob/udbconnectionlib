@@ -1,9 +1,10 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) UDB Connection Library contributors.
- * See the LICENSE file in the project root for license information.
- */
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 Yuri Boltovski
+Author: Yuri Boltovski yabjob@gmail.com
+This file is part of the UDB Connection Library.
+See the project LICENSE file for license terms.
+NOTE: This header was added/verified by Yuri Boltovski. */
 package udblib.sql;
 
 import udblib.IDatabaseAdapter;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Legacy query implementation supporting named parameter expansion, result collection, stored procedures, and transaction helpers.
@@ -26,105 +29,133 @@ import java.util.Locale;
  * @since 2.1.0
  */
 public class sqlQuery implements IDatabaseQuery {
-	
-	private 		IDatabaseAdapter 			  adapter;
-    private 		IDatabaseConnection  	  connection;
-    private 		String					connKey;
-    private 		String					ownerID;
-    private 		String					sql;
-    private 		char						quoteChar;
-    private 		Properties				params;
-    private        String[]					paramNamesOrdered; // param names by order (need because params is unsorted in Properties object)    
-    private 		Locale					locale;
-    private 		long						timeZoneOffset; 
+    
+    private         IDatabaseAdapter              adapter;
+    private         IDatabaseConnection          connection;
+    private         String                    connKey;
+    private         String                    ownerID;
+    private         String                    sql;
+    private         char                        quoteChar;
+    private         Properties                params; // legacy string-formatted params (kept for stored-proc/back-compat)
+    private         Map<String,Object>        typedParams; // typed parameter values for safe binding
+    private        String[]                    paramNamesOrdered; // param names by order (need because params is unsorted in Properties object)    
+    private         Locale                    locale;
+    private         long                        timeZoneOffset; 
 
     
     
     public sqlQuery(IDatabaseAdapter aAdapter, IDatabaseConnection aConn, String aConnKey, String aOwnerID, Locale aLocale, long aTimeZoneOffset) {
-       adapter           	= aAdapter;
-       connection      	= aConn;
-       connKey         	= aConnKey;
-       ownerID         	= aOwnerID;
-       locale              	= aLocale;
+       adapter               = aAdapter;
+       connection           = aConn;
+       connKey              = aConnKey;
+       ownerID              = aOwnerID;
+       locale               = aLocale;
        timeZoneOffset = aTimeZoneOffset;
-       quoteChar       	= aAdapter.getQuoteChar();
-       params           	= new Properties();
+       quoteChar           = aAdapter.getQuoteChar();
+       params              = new Properties();
+       typedParams         = new LinkedHashMap<String,Object>();
        paramNamesOrdered =  new String[aAdapter.getMaxSPParamsCount()];
     }
     
-    public IDatabaseAdapter getAdapter() 	   		{ return adapter; }
+    public IDatabaseAdapter getAdapter()         { return adapter; }
 
-    public IDatabaseConnection getConn() 	   		{ return connection; }
+    public IDatabaseConnection getConn()         { return connection; }
 
-    public boolean testConn(boolean needPing, boolean needReconnect)	throws Exception { 
-    	boolean res = false;
-   		if (connection != null) {
-    			if (connection.isExists()) res = needPing ? adapter.PingConnection(connection) : true;
-   		}
-   		if (!res) {
-				try { connection.Disconnect(); } catch(Exception e) {}   						
-				res = connection.Connect() != null;
-				if (connection.isExists()) res = needPing ? adapter.PingConnection(connection) : true;
-   		}
-    	return res;
+    public boolean testConn(boolean needPing, boolean needReconnect)    throws Exception { 
+     boolean res = false;
+         if (connection != null) {
+             if (connection.isExists()) res = needPing ? adapter.PingConnection(connection) : true;
+         }
+         if (!res) {
+             try { connection.Disconnect(); } catch(Exception e) {}                           
+             res = connection.Connect() != null;
+             if (connection.isExists()) res = needPing ? adapter.PingConnection(connection) : true;
+         }
+     return res;
     }
     
-    public String getConnKey() 		       					{ return connKey; }
+    public String getConnKey()                             { return connKey; }
 
-    public String getOwnerID() 		       					{ return ownerID; }
+    public String getOwnerID()                             { return ownerID; }
 
-    public Properties getParams() 	   					{ return params; }
+    /**
+     * Returns legacy string-form params. For safe binding use getTypedParams() which contains raw typed values.
+     */
+    public Properties getParams()                         { return params; }
 
-    public String[] getParamNames()   					{ return paramNamesOrdered; }
+    /**
+     * Returns typed parameter map (in insertion order). Keys are parameter names.
+     */
+    public Map<String,Object> getTypedParams()            { return typedParams; }
 
-    public String getSQL() 		          					{ return sql; }
+    public String[] getParamNames()                       { return paramNamesOrdered; }
+
+    public String getSQL()                                 { return sql; }
 
     
     public void ClearParams() {
        params.clear();
+       typedParams.clear();
     }
     
     public String getParamValue(String name) {
-      return params.getProperty(name);
+      Object v = params.get(name);
+      if (v == null) return null;
+      if (v instanceof String) return (String) v;
+      return v.toString();
     }
 
     private void setPar(String name, String value, String type, boolean aReplaceSpecialSymbols) {
       String v = value; long v2;
+      Object typedVal = null;
       if (adapter.getSQLToLowerCase()) name = name.toLowerCase();
       if (type != null) {
         if (type.equalsIgnoreCase(pSTRING)) {
-               if (value != null) v =  quoteChar + (aReplaceSpecialSymbols ? adapter.replaceSpecialSymbols(value) : value) + quoteChar;
-               else v = pNULL;
+               if (value != null) {
+                   v =  quoteChar + (aReplaceSpecialSymbols ? adapter.replaceSpecialSymbols(value) : value) + quoteChar;
+                   typedVal = value;
+               }
+               else { v = pNULL; typedVal = null; }
         } else
         if (type.equalsIgnoreCase(pINT)) {
            v =  value;
+           try { typedVal = Long.parseLong(value); } catch(Exception e) { try { typedVal = Integer.parseInt(value); } catch(Exception e2) { typedVal = null; } }
         } else
         if (type.equalsIgnoreCase(pFLOAT)) {
            v =  value;
+           try { typedVal = Double.parseDouble(value); } catch(Exception e) { typedVal = null; }
         } else
         if (type.equalsIgnoreCase(pDATETIME)) {
-        	v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
-            v =  quoteChar + adapter.getDateTimeStr(v2) + quoteChar;
+           v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
+           v =  quoteChar + adapter.getDateTimeStr(v2) + quoteChar;
+           typedVal = new java.sql.Timestamp(v2);
         } else
         if (type.equalsIgnoreCase(pDATE)) {
-        	v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
-            v =  quoteChar + adapter.getDateStr(v2) + quoteChar;
+           v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
+           v =  quoteChar + adapter.getDateStr(v2) + quoteChar;
+           typedVal = new java.sql.Date(v2);
         } else
         if (type.equalsIgnoreCase(pTIME)) {
-        	v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
-            v =  quoteChar + adapter.getTimeStr(v2) + quoteChar;
+           v2 = Long.parseLong(value); if (v2 > 0) v2 = v2 + timeZoneOffset;
+           v =  quoteChar + adapter.getTimeStr(v2) + quoteChar;
+           typedVal = new java.sql.Time(v2);
         } else
         if (type.equalsIgnoreCase(pNULL)) {
            v = adapter.getNullWord();
+           typedVal = null;
         }
       }
       params.setProperty(name, v);
-      paramNamesOrdered[params.size()-1] = name;
+      // keep typed param map for safe binding
+      typedParams.put(name, typedVal);
+      // keep reference to typedParams in properties so legacy callers can still access it if needed
+      params.put("__typedParams", typedParams);
+      paramNamesOrdered[typedParams.size()-1] = name;
     }
 
     public void setParam(String name, String value, boolean aReplaceSpecialSymbols) {
-        	setPar(name,value, pSTRING, aReplaceSpecialSymbols);
-      }
+           setPar(name,value, pSTRING, aReplaceSpecialSymbols);
+        }
 
     
     public void setParam(String name, String value) {
@@ -191,7 +222,7 @@ public class sqlQuery implements IDatabaseQuery {
     }
     
     public String ConvertDateStrToSQLDateStr(String str, String formatStr) {
-    	return adapter.ConvertDateStrToSQLDateStr(str, formatStr);
+     return adapter.ConvertDateStrToSQLDateStr(str, formatStr);
     }
 
     public IDatabaseConnection ReservConnect() throws UException {
@@ -215,9 +246,9 @@ public class sqlQuery implements IDatabaseQuery {
             if (adapter.getSQLToLowerCase()) aSQL = aSQL.toLowerCase();
             sql = aSQL;
             adapter.ExecQuery( aIsStoredProcCall, this, aResultRowClass, aResults, locale, timeZoneOffset); 
-      }
-      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-   }
+       }
+       catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+    }
 
 
 public void Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass, List aResultArray) throws UException {
@@ -231,19 +262,19 @@ public List Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass) 
      }
 
 public List Exec(boolean aIsStoredProcCall, String aSQL, String[] queryParNames, String[] queryParValues, Class aResultRowClass, boolean  needResultSet)  throws UException {
-	List  res = needResultSet ? new ArrayList() : null;
+ List  res = needResultSet ? new ArrayList() : null;
 
-	String[]  qParNames = queryParNames != null ? queryParNames : new String [0];
+ String[]  qParNames = queryParNames != null ? queryParNames : new String [0];
     String[]  qParValues = queryParValues != null ? queryParValues : new String [0];
     
     ClearParams();
-	for (int i=0; i<qParNames.length; i++) {
-			setParam(qParNames[i], qParValues[i]); 
-	}
-	
-	doExec(aIsStoredProcCall, aSQL, aResultRowClass, res);	
-    
-	return res;
+ for (int i=0; i<qParNames.length; i++) {
+         setParam(qParNames[i], qParValues[i]); 
+ }
+ 
+ doExec(aIsStoredProcCall, aSQL, aResultRowClass, res);    
+ 
+ return res;
 }
 
 public void Exec(boolean aIsStoredProcCall, String aSQL, List aResults) throws UException {
@@ -283,7 +314,7 @@ public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass, List aRe
        return aResults.size() > 0 ? aResults.get(0) : null;
    }
 public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass) throws UException {
-	   List resLst = new ArrayList(); 	
+      List resLst = new ArrayList();    
        ExecSP(aStoredProcName, aResultRowClass, resLst);
        return resLst.size() > 0 ? resLst.get(0) : null;
    }
@@ -294,16 +325,16 @@ public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName, Lis
        return r.getAsLong(resultSetIdColumnName);
    }
 public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName) throws UException {
-	   List resLst = new ArrayList(); 	
+      List resLst = new ArrayList();    
        ExecSP(aStoredProcName, resLst);
        sqlResultRow r = ( sqlResultRow ) resLst.get(0);
        return r.getAsLong(resultSetIdColumnName);
    }
 
 public void BeginTran() throws UException {
-    try { adapter.BeginTran(connection, null); }
-    catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-   }
+     try { adapter.BeginTran(connection, null); }
+     catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+    }
 public void CommitTran() throws UException  {
      try { adapter.CommitTran(connection); }
      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
@@ -317,13 +348,13 @@ public void RollbackTran() throws UException  {
    }
 
 public void Shutdown(int mode) throws UException {
-	   try { Exec(adapter.getShutdownText(mode)); }
-	   catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+      try { Exec(adapter.getShutdownText(mode)); }
+      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
    }
 
 public void CheckDatabase(int mode) throws UException {
-	   try { Exec(adapter.getCheckDatabaseText(mode)); }
-	   catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+      try { Exec(adapter.getCheckDatabaseText(mode)); }
+      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
 }
 
 
