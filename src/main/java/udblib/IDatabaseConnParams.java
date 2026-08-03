@@ -1,9 +1,10 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) UDB Connection Library contributors.
- * See the LICENSE file in the project root for license information.
- */
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 Yuri Boltovski
+Author: Yuri Boltovski yabjob@gmail.com
+This file is part of the UDB Connection Library.
+See the project LICENSE file for license terms.
+NOTE: This header was added/verified by Yuri Boltovski. */
 package udblib;
 
 import java.util.Properties;
@@ -18,20 +19,20 @@ import java.util.Properties;
  */
 public interface IDatabaseConnParams {
 
-	public abstract String getKey();
+    public abstract String getKey();
 
-	public abstract int getType();
+    public abstract int getType();
 
-	public abstract String getDriverClassName();
+    public abstract String getDriverClassName();
 
-	public abstract String getDbUrl();
+    public abstract String getDbUrl();
 
-	public abstract String getLogin();
+    public abstract String getLogin();
 
-	public abstract String getPassw();
+    public abstract String getPassw();
 
-	public abstract boolean getSqlToLowerCase();
+    public abstract boolean getSqlToLowerCase();
 
-	public abstract Properties getConnProps();
+    public abstract Properties getConnProps();
 
 }
