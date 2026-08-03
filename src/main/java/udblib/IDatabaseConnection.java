@@ -1,9 +1,10 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) UDB Connection Library contributors.
- * See the LICENSE file in the project root for license information.
- */
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 Yuri Boltovski
+Author: Yuri Boltovski yabjob@gmail.com
+This file is part of the UDB Connection Library.
+See the project LICENSE file for license terms.
+NOTE: This header was added/verified by Yuri Boltovski. */
 package udblib;
 
 import java.sql.Connection;
@@ -21,38 +22,38 @@ import java.util.Properties;
  */
 public interface IDatabaseConnection {
 
-	public abstract Connection Connect() throws Exception;
+    public abstract Connection Connect() throws Exception;
 
-	public abstract void Disconnect() throws Exception;
+    public abstract void Disconnect() throws Exception;
 
-	public abstract boolean isExists();
+    public abstract boolean isExists();
 
-	public abstract long getID();
+    public abstract long getID();
 
-	public abstract String getKey();
+    public abstract String getKey();
 
-	public abstract Connection getConnection();
+    public abstract Connection getConnection();
 
-	public abstract IDatabaseConnParams getConnParams();
+    public abstract IDatabaseConnParams getConnParams();
 
-	public abstract IDatabaseAdapter getAdapter();
+    public abstract IDatabaseAdapter getAdapter();
 
-	public abstract String getOwnerID();
+    public abstract String getOwnerID();
 
-	public abstract void setOwnerID(String aOwnerID);
+    public abstract void setOwnerID(String aOwnerID);
 
-	public abstract boolean HasOwner();
-	
-	public abstract boolean IsOwner(String aOwnerID);	
+    public abstract boolean HasOwner();
+    
+    public abstract boolean IsOwner(String aOwnerID);    
 
-	public abstract long getInactivePeriod();
+    public abstract long getInactivePeriod();
 
-	public abstract void doExec(boolean aIsStoredProcCall, String aSQL, Properties aParams, Class aResultRowClass, List aResultArray, Locale aLocale, long aTimeZoneOffset) throws Exception;
+    public abstract void doExec(boolean aIsStoredProcCall, String aSQL, Properties aParams, Class aResultRowClass, List aResultArray, Locale aLocale, long aTimeZoneOffset) throws Exception;
 
-	public abstract void BeginTran(String aSQL) throws Exception;
+    public abstract void BeginTran(String aSQL) throws Exception;
 
-	public abstract void CommitTran() throws Exception;
+    public abstract void CommitTran() throws Exception;
 
-	public abstract void RollbackTran() throws Exception;
+    public abstract void RollbackTran() throws Exception;
 
 }
