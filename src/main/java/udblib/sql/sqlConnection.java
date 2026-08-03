@@ -30,6 +30,8 @@ import java.util.List;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Map;
 
 import udblib.IDatabaseAdapter;
 import udblib.IDatabaseConnParams;
@@ -199,6 +201,49 @@ public class sqlConnection implements IDatabaseConnection {
      return res;
    }
 
+   private class ParsedSQL {
+       String sql;
+       List<String> names;
+       ParsedSQL(String s, List<String> n) { sql = s; names = n; }
+   }
+
+   private ParsedSQL parseSQLToPrepared(String aSQL) throws Exception {
+       StringBuilder res = new StringBuilder();
+       List<String> names = new ArrayList<String>();
+       StringBuilder nameBuf = null;
+       boolean inParam = false;
+       for (int i = 0; i < aSQL.length(); i++) {
+           char ch = aSQL.charAt(i);
+           if (inParam) {
+               // allowed identifier chars: letters, digits, underscore
+               if (Character.isLetterOrDigit(ch) || ch == '_') {
+                   nameBuf.append(ch);
+                   continue;
+               }
+               // param ended
+               String pname = nameBuf.toString();
+               names.add(pname);
+               res.append('?');
+               inParam = false;
+               nameBuf = null;
+               // current char is not part of param, append it and continue
+               res.append(ch);
+           } else {
+               if (ch == ':') {
+                   inParam = true;
+                   nameBuf = new StringBuilder();
+               } else {
+                   res.append(ch);
+               }
+           }
+       }
+       if (inParam && nameBuf != null) {
+           names.add(nameBuf.toString());
+           res.append('?');
+       }
+       return new ParsedSQL(res.toString(), names);
+   }
+
 
    private void setResultRowAbstractFieldValue( Object aRowObject,
                                                 int dbColNum, String dbColName, int dbColType,
@@ -309,54 +354,131 @@ public class sqlConnection implements IDatabaseConnection {
      boolean    needResultSet = aResults != null;
      boolean    isAbstractRow = aResultRowClass == null;
 
-     String  sql = ParseSQL(aSQL, aParams, adapter.getNullWord());
+     // If the caller supplied typed params (sqlQuery stores them under "__typedParams"),
+     // convert :name tokens into ? placeholders and bind values safely.
+     Map<String,Object> typedMap = null;
+     if (aParams != null) {
+         Object o = aParams.get("__typedParams");
+         if (o instanceof Map) typedMap = (Map<String,Object>) o;
+     }
 
-     try (PreparedStatement stmt = (aIsStoredProcCall) ? connection.prepareCall(sql) : connection.prepareStatement(sql)) {
+     if (typedMap != null && typedMap.size() > 0) {
+         ParsedSQL parsed = parseSQLToPrepared(aSQL);
+         String sql = parsed.sql;
 
-     if (needResultSet) {
-         if (aResults.size() > 0) aResults.clear();
+         try (PreparedStatement stmt = (aIsStoredProcCall) ? connection.prepareCall(sql) : connection.prepareStatement(sql)) {
 
-         doSafeLog(sql);
+             // Bind parameters in order
+             for (int i = 0; i < parsed.names.size(); i++) {
+                 String pname = parsed.names.get(i);
+                 String key = adapter.getSQLToLowerCase() ? pname.toLowerCase() : pname;
+                 Object val = typedMap.get(key);
+                 int idx = i + 1;
+                 if (val == null) {
+                     stmt.setNull(idx, Types.NULL);
+                 } else if (val instanceof String) {
+                     stmt.setString(idx, (String) val);
+                 } else if (val instanceof Integer) {
+                     stmt.setInt(idx, ((Integer) val).intValue());
+                 } else if (val instanceof Long) {
+                     stmt.setLong(idx, ((Long) val).longValue());
+                 } else if (val instanceof Double) {
+                     stmt.setDouble(idx, ((Double) val).doubleValue());
+                 } else if (val instanceof Float) {
+                     stmt.setFloat(idx, ((Float) val).floatValue());
+                 } else if (val instanceof java.sql.Timestamp) {
+                     stmt.setTimestamp(idx, (java.sql.Timestamp) val);
+                 } else if (val instanceof java.sql.Date) {
+                     stmt.setDate(idx, (java.sql.Date) val);
+                 } else if (val instanceof java.sql.Time) {
+                     stmt.setTime(idx, (java.sql.Time) val);
+                 } else {
+                     stmt.setObject(idx, val);
+                 }
+             }
 
-         
-         try (ResultSet rs = stmt.executeQuery()) {
-         ResultSetMetaData rsmd = rs.getMetaData();
+             if (needResultSet) {
+                 if (aResults.size() > 0) aResults.clear();
+                 doSafeLog(sql);
 
-         Field[]    rowFields     = null;
+                 try (ResultSet rs = stmt.executeQuery()) {
+                     ResultSetMetaData rsmd = rs.getMetaData();
 
-         if (   isAbstractRow )  aResultRowClass = sqlResultRow.class;
-         if ( ! isAbstractRow )  rowFields = aResultRowClass.getFields();
-         
-         
-         while (rs.next()) {
-           Object rowObject  = null;
+                     Field[]    rowFields     = null;
 
-           if ( isAbstractRow ) rowObject = new sqlResultRow( rsmd.getColumnCount(), aLocale );
-           else rowObject = aResultRowClass.getDeclaredConstructor().newInstance();
-           
-           for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-              String  colName   = rsmd.getColumnLabel(i);   //String  colName   = rsmd.getColumnName(i);
-              int        colType   = rsmd.getColumnType(i) ;
+                     if (   isAbstractRow )  aResultRowClass = sqlResultRow.class;
+                     if ( ! isAbstractRow )  rowFields = aResultRowClass.getFields();
 
-              if ( ! isAbstractRow ) setResultRowFieldValue( rowObject, rowFields, i, colName, colType, rs, aLocale, aTimeZoneOffset);
-              else  setResultRowAbstractFieldValue( rowObject, i, colName, colType, rs, aLocale, aTimeZoneOffset);
-                
-             
-           }
-           aResults.add(rowObject);
+                     while (rs.next()) {
+                         Object rowObject  = null;
+
+                         if ( isAbstractRow ) rowObject = new sqlResultRow( rsmd.getColumnCount(), aLocale );
+                         else rowObject = aResultRowClass.getDeclaredConstructor().newInstance();
+
+                         for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                             String  colName   = rsmd.getColumnLabel(i);
+                             int     colType   = rsmd.getColumnType(i) ;
+
+                             if ( ! isAbstractRow ) setResultRowFieldValue( rowObject, rowFields, i, colName, colType, rs, aLocale, aTimeZoneOffset);
+                             else  setResultRowAbstractFieldValue( rowObject, i, colName, colType, rs, aLocale, aTimeZoneOffset);
+                         }
+                         aResults.add(rowObject);
+                     }
+                 }
+             }
+             else {
+                 doSafeLog(sql);
+                 stmt.execute();
+             }
          }
-         }
-
      }
      else {
-         doSafeLog(sql);
-        stmt.execute();
+         // fallback: legacy textual replacement behavior
+         String sql = ParseSQL(aSQL, aParams, adapter.getNullWord());
+
+         try (PreparedStatement stmt = (aIsStoredProcCall) ? connection.prepareCall(sql) : connection.prepareStatement(sql)) {
+
+             if (needResultSet) {
+                 if (aResults.size() > 0) aResults.clear();
+
+                 doSafeLog(sql);
+
+                 try (ResultSet rs = stmt.executeQuery()) {
+                 ResultSetMetaData rsmd = rs.getMetaData();
+
+                 Field[]    rowFields     = null;
+
+                 if (   isAbstractRow )  aResultRowClass = sqlResultRow.class;
+                 if ( ! isAbstractRow )  rowFields = aResultRowClass.getFields();
+
+                 while (rs.next()) {
+                   Object rowObject  = null;
+
+                   if ( isAbstractRow ) rowObject = new sqlResultRow( rsmd.getColumnCount(), aLocale );
+                   else rowObject = aResultRowClass.getDeclaredConstructor().newInstance();
+
+                   for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                      String  colName   = rsmd.getColumnLabel(i);   //String  colName   = rsmd.getColumnName(i);
+                      int     colType   = rsmd.getColumnType(i) ;
+
+                      if ( ! isAbstractRow ) setResultRowFieldValue( rowObject, rowFields, i, colName, colType, rs, aLocale, aTimeZoneOffset);
+                      else  setResultRowAbstractFieldValue( rowObject, i, colName, colType, rs, aLocale, aTimeZoneOffset);
+                   }
+                   aResults.add(rowObject);
+                 }
+                 }
+
+             }
+             else {
+                 doSafeLog(sql);
+                 stmt.execute();
+             }
+         }
      }
+
+     if (adapter.isDebugMode()) {
+         System.out.println("QUERY: " + aSQL + "   -  " + (needResultSet && aResults != null ? aResults.size()  : ""));
      }
-     
-   if (adapter.isDebugMode()) {
-       System.out.println("QUERY: " + sql + "   -  " + (needResultSet && aResults != null ? aResults.size()  : ""));
-    }
 
   }
 
