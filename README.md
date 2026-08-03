@@ -4,6 +4,14 @@ A small JDBC abstraction and custom connection-pooling library for **MySQL**, **
 
 > **Project status:** legacy code being prepared for community maintenance. Review `docs/CODE_REVIEW.md` before production use.
 
+## Maintainer
+
+This repository is maintained by:
+
+- Yuri Boltovski — <yabjob@gmail.com> ([yabjob](https://github.com/yabjob))
+
+Contributions are welcome — see CONTRIBUTING.md for guidelines.
+
 ## Features
 
 - Database-specific adapters for MySQL, MariaDB, and HSQLDB
@@ -31,13 +39,11 @@ After publishing a release, consumers can use:
 
 ```xml
 <dependency>
-  <groupId>io.github.your-github-username</groupId>
+  <groupId>io.github.yabjob</groupId>
   <artifactId>udb-connection-lib</artifactId>
   <version>2.1.0</version>
 </dependency>
 ```
-
-Replace `your-github-username` in this file and `pom.xml` before publishing.
 
 ## Minimal example
 
@@ -92,7 +98,7 @@ also attach source and Javadoc JARs. See [`docs/JAVADOC.md`](docs/JAVADOC.md).
 
 ## Security warning
 
-The current named-parameter engine renders values into SQL text instead of binding them through JDBC placeholders. Do not accept raw SQL fragments, identifiers, or untrusted values without reviewing the escaping behavior. See `SECURITY.md` and `docs/CODE_REVIEW.md`.
+The current named-parameter engine renders values into SQL text instead of binding them through JDBC placeholders in older versions. The yuri/prepare-oss branch migrates the library to bind parameters using JDBC placeholders to reduce SQL injection risk. Avoid using untrusted raw SQL fragments or identifiers.
 
 ## Documentation
 
