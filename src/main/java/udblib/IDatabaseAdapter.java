@@ -1,9 +1,10 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) UDB Connection Library contributors.
- * See the LICENSE file in the project root for license information.
- */
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 Yuri Boltovski
+Author: Yuri Boltovski yabjob@gmail.com
+This file is part of the UDB Connection Library.
+See the project LICENSE file for license terms.
+NOTE: This header was added/verified by Yuri Boltovski. */
 package udblib;
 
 import java.util.List;
@@ -21,97 +22,95 @@ import java.util.Properties;
  */
 public interface IDatabaseAdapter {
 
-	public static final int CM_PerQuery    	= 	1;
-	public static final int CM_PerSession	=	2;
+    public static final int CM_PerQuery        =     1;
+    public static final int CM_PerSession    =    2;
 
     // sql server types
-	public static final int DB_EmptyTest		=   5;
-    public static final int DB_MySQL     		=  10;
-    public static final int DB_Mariadb    		=  15;
-    public static final int DB_MSSQL     		=  20;
-    public static final int DB_HSQLDB    		=  30;
+    public static final int DB_EmptyTest        =   5;
+    public static final int DB_MySQL           =  10;
+    public static final int DB_Mariadb         =  15;
+    public static final int DB_MSSQL           =  20;
+    public static final int DB_HSQLDB          =  30;
 
     
-    public static final int SHRINK_DATABASE	=   100;
+    public static final int SHRINK_DATABASE    =   100;
     
        
     
-	
-    
     public abstract IDatabaseQuery PrepareConnect( boolean aAutoCreatePool,
-																					String aOwnerID, String aDbName,
-																					String aLogin, String aPassword,
-									                                                boolean useConnProps, int aTimeout,  Locale aLocale, 
-									                                                long aTimeZoneOffset) throws Exception;
-	
-	public abstract IDatabaseConnection ReservConnect(IDatabaseQuery aQuery) throws Exception;
+                                                                                    String aOwnerID, String aDbName,
+                                                                                    String aLogin, String aPassword,
+                                                                                                            boolean useConnProps, int aTimeout,  Locale aLocale, 
+                                                                                                            long aTimeZoneOffset) throws Exception;
+    
+    public abstract IDatabaseConnection ReservConnect(IDatabaseQuery aQuery) throws Exception;
 
-	public abstract void FreeConnect(IDatabaseConnection conn) throws Exception;
+    public abstract void FreeConnect(IDatabaseConnection conn) throws Exception;
 
-	public abstract void DestroyConnect(IDatabaseConnection aConn) throws Exception;
-	
-	public abstract IDatabaseQuery ReCreateConnect(IDatabaseConnection aConn, String aOwnerID, boolean useConnProps, 
-																					 int aTimeout, Locale aLocale, long aTimeZoneOffset) throws Exception;
-	
-	public abstract void DestroyConnections(String aDbUrl) throws Exception;
+    public abstract void DestroyConnect(IDatabaseConnection aConn) throws Exception;
+    
+    public abstract IDatabaseQuery ReCreateConnect(IDatabaseConnection aConn, String aOwnerID, boolean useConnProps, 
+                                                                                     int aTimeout, Locale aLocale, long aTimeZoneOffset) throws Exception;
+    
+    public abstract void DestroyConnections(String aDbUrl) throws Exception;
 
-	public abstract int getDefaultTransactionIsolation();
-	
-	public abstract String getVersion();
-	
-	public abstract int getDbType();
+    public abstract int getDefaultTransactionIsolation();
+    
+    public abstract String getVersion();
+    
+    public abstract int getDbType();
 
-	public abstract void setDebugMode(boolean v);
+    public abstract void setDebugMode(boolean v);
 
-	public abstract boolean isDebugMode();
-	
-	public abstract String getDbUrl(String aDbName);
-	
-	public abstract boolean getIsAutoCommit();
-	
-	public abstract boolean getIsReadOnly();
-	
-	public abstract void ExecQuery( boolean aIsStoredProcCall, IDatabaseQuery aQuery, Class aResultRowClass,
-													   List aResults, Locale aLocale, long aTimeZoneOffset ) throws Exception;
+    public abstract boolean isDebugMode();
+    
+    public abstract String getDbUrl(String aDbName);
+    
+    public abstract boolean getIsAutoCommit();
+    
+    public abstract boolean getIsReadOnly();
+    
+    public abstract void ExecQuery( boolean aIsStoredProcCall, IDatabaseQuery aQuery, Class aResultRowClass,
+                                                       List aResults, Locale aLocale, long aTimeZoneOffset ) throws Exception;
     
     public abstract void BeginTran(IDatabaseConnection conn, String aSQL) throws Exception;
 
-	public abstract void CommitTran(IDatabaseConnection conn) throws Exception;
+    public abstract void CommitTran(IDatabaseConnection conn) throws Exception;
 
-	public abstract void RollbackTran(IDatabaseConnection conn) throws Exception;
+    public abstract void RollbackTran(IDatabaseConnection conn) throws Exception;
 
-	public abstract boolean PingConnection(IDatabaseConnection conn);
+    public abstract boolean PingConnection(IDatabaseConnection conn);
 
-	public abstract boolean getSQLToLowerCase();
-	
-	public abstract boolean getUseOldOwnExistingSessionConnection();
-	public abstract void setUseOldOwnExistingSessionConnection(boolean value);
+    public abstract boolean getSQLToLowerCase();
+    
+    public abstract boolean getUseOldOwnExistingSessionConnection();
+    public abstract void setUseOldOwnExistingSessionConnection(boolean value);
 
-	public abstract String getPingQueryText();
+    public abstract String getPingQueryText();
 
-	public abstract boolean getPingQueryIsSP();
+    public abstract boolean getPingQueryIsSP();
 
-	public abstract char getQuoteChar();
+    public abstract char getQuoteChar();
 
-	public abstract String BuildStoredProcExecSQL(String aSPName, Properties params, String[] paramNames);
+    public abstract String BuildStoredProcExecSQL(String aSPName, Properties params, String[] paramNames);
 
-	public abstract int getMaxSPParamsCount();
+    public abstract int getMaxSPParamsCount();
 
-	public abstract String getNullWord();
+    public abstract String getNullWord();
 
-	public abstract String replaceSpecialSymbols(String str);
+    public abstract String replaceSpecialSymbols(String str);
 
-	public abstract String getDateTimeStr(long Time);
+    public abstract String getDateTimeStr(long Time);
 
-	public abstract String getDateStr(long Time);
+    public abstract String getDateStr(long Time);
 
-	public abstract String getTimeStr(long Time);
-	
-	public abstract String ConvertDateStrToSQLDateStr(String str, String formatStr);
+    public abstract String getTimeStr(long Time);
+    
+    public abstract String ConvertDateStrToSQLDateStr(String str, String formatStr);
 
-	public abstract String getShutdownText(int mode);
-	
-	public abstract String getCheckDatabaseText(int mode);
-	
-	public abstract void destroy();
+    public abstract String getShutdownText(int mode);
+    
+    public abstract String getCheckDatabaseText(int mode);
+    
+    public abstract void destroy();
 }
