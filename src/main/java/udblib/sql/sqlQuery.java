@@ -251,111 +251,111 @@ public class sqlQuery implements IDatabaseQuery {
     }
 
 
-public void Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass, List aResultArray) throws UException {
-      doExec(aIsStoredProcCall, aSQL, aResultRowClass, aResultArray);
-}
+ public void Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass, List aResultArray) throws UException {
+       doExec(aIsStoredProcCall, aSQL, aResultRowClass, aResultArray);
+ }
 
-public List Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass) throws UException {
-      List resArray = new ArrayList();
-      doExec(aIsStoredProcCall, aSQL, aResultRowClass, resArray);
-      return resArray;
+ public List Exec(boolean aIsStoredProcCall, String aSQL, Class aResultRowClass) throws UException {
+       List resArray = new ArrayList();
+       doExec(aIsStoredProcCall, aSQL, aResultRowClass, resArray);
+       return resArray;
+      }
+
+ public List Exec(boolean aIsStoredProcCall, String aSQL, String[] queryParNames, String[] queryParValues, Class aResultRowClass, boolean  needResultSet)  throws UException {
+  List  res = needResultSet ? new ArrayList() : null;
+
+  String[]  qParNames = queryParNames != null ? queryParNames : new String [0];
+     String[]  qParValues = queryParValues != null ? queryParValues : new String [0];
+     
+     ClearParams();
+  for (int i=0; i<qParNames.length; i++) {
+           setParam(qParNames[i], qParValues[i]); 
+  }
+  
+  doExec(aIsStoredProcCall, aSQL, aResultRowClass, res);    
+  
+  return res;
+ }
+
+ public void Exec(boolean aIsStoredProcCall, String aSQL, List aResults) throws UException {
+       doExec(aIsStoredProcCall, aSQL, null, aResults);
      }
 
-public List Exec(boolean aIsStoredProcCall, String aSQL, String[] queryParNames, String[] queryParValues, Class aResultRowClass, boolean  needResultSet)  throws UException {
- List  res = needResultSet ? new ArrayList() : null;
+ public void Exec(boolean aIsStoredProcCall, String aSQL) throws UException {
+       doExec(aIsStoredProcCall, aSQL, null, null);
+    }
 
- String[]  qParNames = queryParNames != null ? queryParNames : new String [0];
-    String[]  qParValues = queryParValues != null ? queryParValues : new String [0];
+ public void Exec(String aSQL) throws UException {
+     doExec(false, aSQL, null, null);
+  }
+
+ public Object Exec_Get(String aSQL, Class aResultRowClass) throws UException {
+     List resLst = new ArrayList();
+     doExec(false, aSQL, aResultRowClass, resLst);
+     return resLst.size() > 0 ? resLst.get(0) : null;
+ }
+
+ public void ExecSP(String aStoredProcName, Class aResultRowClass, List aResults) throws UException {
+        String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
+        Exec(true, aSQL, aResultRowClass, aResults);
+    }
+
+ public void ExecSP(String aStoredProcName, List aResults) throws UException {
+        String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
+        Exec(true, aSQL, aResults);
+    }
+ public void ExecSP(String aStoredProcName) throws UException {
+        String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
+        Exec(true, aSQL);
+    }
     
-    ClearParams();
- for (int i=0; i<qParNames.length; i++) {
-         setParam(qParNames[i], qParValues[i]); 
- }
- 
- doExec(aIsStoredProcCall, aSQL, aResultRowClass, res);    
- 
- return res;
-}
-
-public void Exec(boolean aIsStoredProcCall, String aSQL, List aResults) throws UException {
-      doExec(aIsStoredProcCall, aSQL, null, aResults);
+ public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass, List aResults) throws UException {
+        ExecSP(aStoredProcName, aResultRowClass, aResults);
+        return aResults.size() > 0 ? aResults.get(0) : null;
+    }
+ public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass) throws UException {
+       List resLst = new ArrayList();    
+        ExecSP(aStoredProcName, aResultRowClass, resLst);
+        return resLst.size() > 0 ? resLst.get(0) : null;
     }
 
-public void Exec(boolean aIsStoredProcCall, String aSQL) throws UException {
-      doExec(aIsStoredProcCall, aSQL, null, null);
-   }
+ public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName, List aResults) throws UException {
+        ExecSP(aStoredProcName, aResults);
+        sqlResultRow r = ( sqlResultRow ) aResults.get(0);
+        return r.getAsLong(resultSetIdColumnName);
+    }
+ public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName) throws UException {
+       List resLst = new ArrayList();    
+        ExecSP(aStoredProcName, resLst);
+        sqlResultRow r = ( sqlResultRow ) resLst.get(0);
+        return r.getAsLong(resultSetIdColumnName);
+    }
 
-public void Exec(String aSQL) throws UException {
-    doExec(false, aSQL, null, null);
+ public void BeginTran() throws UException {
+      try { adapter.BeginTran(connection, null); }
+      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+     }
+ public void CommitTran() throws UException  {
+      try { adapter.CommitTran(connection); }
+      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+    }
+ public void RollbackTran(boolean needRaiseEx) throws UException  {
+         try { adapter.RollbackTran(connection); }
+         catch (Exception e) { if (needRaiseEx) Util.RaiseUException(e.getMessage()); }
+     }
+ public void RollbackTran() throws UException  {
+         this.RollbackTran(false);
+     }
+
+ public void Shutdown(int mode) throws UException {
+        try { Exec(adapter.getShutdownText(mode)); }
+        catch (Exception e) { Util.RaiseUException(e.getMessage()); }
+     }
+
+ public void CheckDatabase(int mode) throws UException {
+        try { Exec(adapter.getCheckDatabaseText(mode)); }
+        catch (Exception e) { Util.RaiseUException(e.getMessage()); }
  }
 
-public Object Exec_Get(String aSQL, Class aResultRowClass) throws UException {
-    List resLst = new ArrayList();
-    doExec(false, aSQL, aResultRowClass, resLst);
-    return resLst.size() > 0 ? resLst.get(0) : null;
-}
 
-public void ExecSP(String aStoredProcName, Class aResultRowClass, List aResults) throws UException {
-       String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
-       Exec(true, aSQL, aResultRowClass, aResults);
-   }
-
-public void ExecSP(String aStoredProcName, List aResults) throws UException {
-       String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
-       Exec(true, aSQL, aResults);
-   }
-public void ExecSP(String aStoredProcName) throws UException {
-       String aSQL = adapter.BuildStoredProcExecSQL( aStoredProcName, params, paramNamesOrdered );
-       Exec(true, aSQL);
-   }
-   
-public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass, List aResults) throws UException {
-       ExecSP(aStoredProcName, aResultRowClass, aResults);
-       return aResults.size() > 0 ? aResults.get(0) : null;
-   }
-public Object ExecSP_Get(String aStoredProcName, Class aResultRowClass) throws UException {
-      List resLst = new ArrayList();    
-       ExecSP(aStoredProcName, aResultRowClass, resLst);
-       return resLst.size() > 0 ? resLst.get(0) : null;
-   }
-
-public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName, List aResults) throws UException {
-       ExecSP(aStoredProcName, aResults);
-       sqlResultRow r = ( sqlResultRow ) aResults.get(0);
-       return r.getAsLong(resultSetIdColumnName);
-   }
-public long ExecSP_Ins(String aStoredProcName, String resultSetIdColumnName) throws UException {
-      List resLst = new ArrayList();    
-       ExecSP(aStoredProcName, resLst);
-       sqlResultRow r = ( sqlResultRow ) resLst.get(0);
-       return r.getAsLong(resultSetIdColumnName);
-   }
-
-public void BeginTran() throws UException {
-     try { adapter.BeginTran(connection, null); }
-     catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-    }
-public void CommitTran() throws UException  {
-     try { adapter.CommitTran(connection); }
-     catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-   }
-public void RollbackTran(boolean needRaiseEx) throws UException  {
-       try { adapter.RollbackTran(connection); }
-       catch (Exception e) { if (needRaiseEx) Util.RaiseUException(e.getMessage()); }
-   }
-public void RollbackTran() throws UException  {
-       this.RollbackTran(false);
-   }
-
-public void Shutdown(int mode) throws UException {
-      try { Exec(adapter.getShutdownText(mode)); }
-      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-   }
-
-public void CheckDatabase(int mode) throws UException {
-      try { Exec(adapter.getCheckDatabaseText(mode)); }
-      catch (Exception e) { Util.RaiseUException(e.getMessage()); }
-}
-
-
-}
+ }
