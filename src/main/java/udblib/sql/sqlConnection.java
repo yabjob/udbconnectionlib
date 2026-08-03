@@ -87,7 +87,7 @@ public class sqlConnection implements IDatabaseConnection {
            c = DriverManager.getConnection( cp.getDbUrl(), cp.getLogin(), cp.getPassw() );
            doSafeLog(cp.getDbUrl());
         }
-        if (c.isReadOnly()      !=  adapter.getIsReadOnly())   c.setReadOnly(adapter.getIsReadOnly());
+        if (c.isReadOnly()      !=  adapter.getIsReadOnly()) c.setReadOnly(adapter.getIsReadOnly());
         if (c.getAutoCommit() !=  adapter.getIsAutoCommit())    c.setAutoCommit(adapter.getIsAutoCommit());
         c.setTransactionIsolation( adapter.getDefaultTransactionIsolation() );
         connection = c;
@@ -295,7 +295,7 @@ public class sqlConnection implements IDatabaseConnection {
          rowField.set( aRowObject, dbColValue );
       } else
       if (cl.equals("java.lang.Long")) {
-           if (dbColValue instanceof BigInteger) {long v = rs.getLong(dbColNum); dbColValue = new Long(v);}n
+           if (dbColValue instanceof BigInteger) { long v = rs.getLong(dbColNum); dbColValue = new Long(v); }
            rowField.set(aRowObject, dbColValue);
       } else
       if (cl.equals("java.lang.Integer")) {
@@ -317,11 +317,11 @@ public class sqlConnection implements IDatabaseConnection {
            rowField.set(aRowObject, dbColValue);
       } else
       if (cl.equals("java.lang.Double")) {
-           if (dbColValue instanceof BigDecimal) {double v = rs.getDouble(dbColNum); dbColValue = new Double(v);}n
+           if (dbColValue instanceof BigDecimal) { double v = rs.getDouble(dbColNum); dbColValue = new Double(v); }
            rowField.set(aRowObject, dbColValue);
       } else
       if (cl.equals("java.lang.Float")) {
-           if (dbColValue instanceof Double || dbColValue instanceof java.math.BigDecimal) {float v = rs.getFloat(dbColNum); dbColValue = new Float(v);}n
+           if (dbColValue instanceof Double || dbColValue instanceof java.math.BigDecimal) { float v = rs.getFloat(dbColNum); dbColValue = new Float(v); }
            rowField.set(aRowObject, dbColValue);
       } else
 
@@ -340,7 +340,7 @@ public class sqlConnection implements IDatabaseConnection {
       if (cl.equals("byte"))   {byte   v = rs.getByte(dbColNum);  rowField.setByte(aRowObject,v); } else
       if (cl.equals("float"))  {float  v = rs.getFloat(dbColNum); rowField.setFloat(aRowObject,v); } else
       if (cl.equals("double")) {double v = rs.getDouble(dbColNum); rowField.setDouble(aRowObject,v); } else
-      if (cl.equals("boolean")){boolean v= rs.getBoolean(dbColNum); rowField.setBoolean(aRowObject,v);}n
+      if (cl.equals("boolean")){boolean v= rs.getBoolean(dbColNum); rowField.setBoolean(aRowObject,v);} 
       else rowField.set( aRowObject, dbColValue);
 
    }
