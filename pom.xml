@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.github.your-github-username</groupId>
+  <groupId>io.github.yabjob</groupId>
   <artifactId>udb-connection-lib</artifactId>
   <version>2.1.0-SNAPSHOT</version>
   <name>UDB Connection Library</name>
   <description>Lightweight JDBC abstraction and connection-pooling library for MySQL, MariaDB, and HSQLDB.</description>
-  <url>https://github.com/your-github-username/udb-connection-lib</url>
+  <url>https://github.com/yabjob/udbconnectionlib</url>
 
   <licenses>
     <license>
@@ -18,6 +18,15 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <developers>
+    <developer>
+      <id>yabjob</id>
+      <name>Yuri Boltovski</name>
+      <email>yabjob@gmail.com</email>
+      <url>https://github.com/yabjob</url>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -42,7 +51,7 @@
       <groupId>org.hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
       <version>2.7.4</version>
-      <scope>runtime</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -92,6 +101,27 @@
         <version>3.5.4</version>
         <configuration><useModulePath>false</useModulePath></configuration>
       </plugin>
+
+      <!-- Optional quality plugins (disabled by default). Enable in CI or locally as needed. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.2.2</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>4.8.12</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
+
 </project>
