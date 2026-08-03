@@ -34,22 +34,22 @@ import java.util.logging.SimpleFormatter;
  */
 public abstract class sqlAdapter implements IDatabaseAdapter  {
 	
-	private   int       		dbType;
-    private   String    		driverClassName;
-    private   int       		connMode;
-    private   long      		connMaxID;
-    private   boolean   	sqlToLowerCase = false;
-    private   boolean		debugMode		 =	false; 
+	private   int			dbType;
+    private   String			driverClassName;
+    private   int			connMode;
+    private   long			connMaxID;
+    private   boolean		sqlToLowerCase = false;
+    private   boolean	debugMode		 =	false; 
 
     private   List <sqlConnParams> connData 	= null;
     private   List  <sqlConnection>  connPool 	= null;
 
-    private   long      		poolLastClearTime;
-    private   int       		poolCleanInterval;   		// minutes
-    private   int       		poolMinConnCount;		// min conncount for uniq key: server + db + login
-    private   int       		poolMaxConnCount;		// max conncount
-    private   int       		poolConnTimeout;			// timeout when inactive connection will be returned to pool, minutes
-    private   boolean		poolUseOldOwnExistingSessionConnection = false;
+    private   long			poolLastClearTime;
+    private   int			poolCleanInterval;    		// minutes
+    private   int			poolMinConnCount;		// min conncount for uniq key: server + db + login
+    private   int			poolMaxConnCount;		// max conncount
+    private   int			poolConnTimeout;			// timeout when inactive connection will be returned to pool, minutes
+    private   boolean	poolUseOldOwnExistingSessionConnection = false;
 
     private   Logger    	logger = null; 
 
@@ -57,14 +57,14 @@ public abstract class sqlAdapter implements IDatabaseAdapter  {
     
     
   public sqlAdapter( int aDbType, String aDriverClassName, int aConnMode,
-                    			int aPoolCleanInterval, int aPoolMinConnCount, int aPoolMaxConnCount, int aPoolConnTimeout, 
-                    			boolean aNeedLogger, String aLogFileName ) {
+                     					int aPoolCleanInterval, int aPoolMinConnCount, int aPoolMaxConnCount, int aPoolConnTimeout, 
+                     					boolean aNeedLogger, String aLogFileName ) {
 
-    dbType			 			= aDbType;
-    driverClassName		= aDriverClassName;
+    dbType						= aDbType;
+    driverClassName			= aDriverClassName;
     connMode					= aConnMode;
     poolCleanInterval		= aPoolCleanInterval;
-    poolMinConnCount		= aPoolMinConnCount <= aPoolMaxConnCount ? aPoolMinConnCount : (aPoolMinConnCount > 0 ? aPoolMinConnCount : 1);
+    poolMinConnCount	= aPoolMinConnCount <= aPoolMaxConnCount ? aPoolMinConnCount : (aPoolMinConnCount > 0 ? aPoolMinConnCount : 1);
     poolMaxConnCount	= aPoolMaxConnCount;
     poolConnTimeout		= aPoolConnTimeout;
 
@@ -74,14 +74,22 @@ public abstract class sqlAdapter implements IDatabaseAdapter  {
     connData	= new ArrayList<sqlConnParams>(); 
     connPool	= new ArrayList<sqlConnection>();
     
-    try {
-		    logger = aNeedLogger ? Logger.getLogger(aLogFileName) : null;
-		    logger.setLevel(Level.ALL);
-		    Handler fh2 = new FileHandler(aLogFileName, true);
-		    fh2.setFormatter(new SimpleFormatter());
-		    logger.addHandler(fh2);
+    // Initialize logger only when requested. Avoid NullPointerException when aNeedLogger==false.
+    if (aNeedLogger) {
+        try {
+            logger = Logger.getLogger(aLogFileName);
+            logger.setLevel(Level.ALL);
+            Handler fh2 = new FileHandler(aLogFileName, true);
+            fh2.setFormatter(new SimpleFormatter());
+            logger.addHandler(fh2);
+        }
+        catch (Exception e) {
+            // If logging setup fails, disable logging but don't crash the library.
+            logger = null;
+        }
+    } else {
+        logger = null;
     }
-    catch (Exception e) { }
     
   }
 
@@ -89,6 +97,7 @@ public abstract class sqlAdapter implements IDatabaseAdapter  {
   
   public void setDebugMode(boolean v) { debugMode = v; }
   public boolean isDebugMode() { return debugMode; }
+  
   
 
 // ----------------------------------------------------------------------------
@@ -107,7 +116,7 @@ public abstract class sqlAdapter implements IDatabaseAdapter  {
 
    
 private IDatabaseConnParams dataAddParamsIfNotExists(String key, String url, String login, String passw,
-                                                  										boolean sqlToLowerCase, Properties connProps) {
+                                                   						boolean sqlToLowerCase, Properties connProps) {
      sqlConnParams cp = dataGetParams(key);
      if (cp == null) {
        cp = new sqlConnParams(key, dbType, driverClassName, url, login, passw, sqlToLowerCase, connProps);
@@ -141,7 +150,7 @@ private IDatabaseConnParams dataAddParamsIfNotExists(String key, String url, Str
          c = (IDatabaseConnection) connPool.get(i);
          if (c != null) {
              if ( key.equalsIgnoreCase(c.getKey()) && 
-            	  (!c.HasOwner() || (poolUseOldOwnExistingSessionConnection && c.IsOwner(aOwnerID)))  ) {
+              	  (!c.HasOwner() || (poolUseOldOwnExistingSessionConnection && c.IsOwner(aOwnerID)))  ) {
                   if (c.isExists()) {
                        if (NeedPingConnection) {
                            if (PingConnection(c)) {res = c; break;}
@@ -238,19 +247,19 @@ private IDatabaseConnParams dataAddParamsIfNotExists(String key, String url, Str
    }
 
    private synchronized void poolDeleteAllConn(String aDbName) throws Exception {
-	   if (aDbName == null) return; IDatabaseConnection c = null;
-	   String DbUrl = getDbUrl(aDbName);
-	   IDatabaseConnParams cp = null;
-	   for (int n = 0; n < connData.size(); n++) {
-		   cp = (IDatabaseConnParams) connData.get(n);
-		   if (!DbUrl.equalsIgnoreCase(cp.getDbUrl())) continue; 
-		   String key = cp.getKey();
-		   for (int i = 0; i < connPool.size(); i++) {
-			   c = (IDatabaseConnection) connPool.get(i);
-               if (c == null)  continue;
-               if (key.equalsIgnoreCase(c.getKey())) poolDelConn(c);
-		   }
-	   }
+	  if (aDbName == null) return; IDatabaseConnection c = null;
+	  String DbUrl = getDbUrl(aDbName);
+	  IDatabaseConnParams cp = null;
+	  for (int n = 0; n < connData.size(); n++) {
+		  cp = (IDatabaseConnParams) connData.get(n);
+		  if (!DbUrl.equalsIgnoreCase(cp.getDbUrl())) continue; 
+		  String key = cp.getKey();
+		  for (int i = 0; i < connPool.size(); i++) {
+			  c = (IDatabaseConnection) connPool.get(i);
+		       if (c == null)  continue;
+		       if (key.equalsIgnoreCase(c.getKey())) poolDelConn(c);
+		  }
+	  }
    }
 
 
@@ -276,7 +285,7 @@ private IDatabaseConnParams dataAddParamsIfNotExists(String key, String url, Str
       c = poolGetFreeConn(key, aOwnerID, true);
       if (c != null) { poolReservConn(c, aOwnerID); }
       else {
-    	  IDatabaseConnParams cp = dataAddParamsIfNotExists(key,aUrl,aLogin,aPassw,aSQLToLowerCase,aConnProps);
+     	 IDatabaseConnParams cp = dataAddParamsIfNotExists(key,aUrl,aLogin,aPassw,aSQLToLowerCase,aConnProps);
          c = poolAddConn(key, aOwnerID, cp);
       }
     }
@@ -300,7 +309,7 @@ private IDatabaseConnParams dataAddParamsIfNotExists(String key, String url, Str
    }
 
 
-public synchronized IDatabaseConnection ReservConnect(IDatabaseQuery aQuery) throws Exception {
+ public synchronized IDatabaseConnection ReservConnect(IDatabaseQuery aQuery) throws Exception {
      String aOwnerID     = aQuery.getOwnerID();
      String aConnKey     = aQuery.getConnKey();
      IDatabaseConnection aConn = aQuery.getConn();
@@ -309,33 +318,33 @@ public synchronized IDatabaseConnection ReservConnect(IDatabaseQuery aQuery) thr
      return aConn;
    }
 
-public synchronized void FreeConnect(IDatabaseConnection conn) throws Exception {
+ public synchronized void FreeConnect(IDatabaseConnection conn) throws Exception {
        poolFreeConn(conn);
    }
 
-public synchronized void DestroyConnect(IDatabaseConnection aConn) throws Exception {
+ public synchronized void DestroyConnect(IDatabaseConnection aConn) throws Exception {
        if (aConn != null) { poolDelConn(aConn); }
    } 
 
-public synchronized IDatabaseQuery ReCreateConnect(IDatabaseConnection aConn, String aOwnerID, boolean useConnProps, 
-																						 int aTimeout, Locale aLocale, long aTimeZoneOffset) throws Exception {
-	IDatabaseQuery aQuery = null;
-    if (aConn != null) {  
-  	  		IDatabaseConnParams cp = aConn.getConnParams();
-  	  			String dbUrl = cp.getDbUrl();  String dbLogin = cp.getLogin();  String dbPassw = cp.getPassw();
-  	  		DestroyConnect(aConn);
-  	  		aQuery = PrepareConnect(true, aOwnerID, dbUrl, dbLogin, dbPassw,  useConnProps, aTimeout, aLocale, aTimeZoneOffset);      
-    }
-    return aQuery;
-} 
+ public synchronized IDatabaseQuery ReCreateConnect(IDatabaseConnection aConn, String aOwnerID, boolean useConnProps, 
+ 										 int aTimeout, Locale aLocale, long aTimeZoneOffset) throws Exception {
+ 	IDatabaseQuery aQuery = null;
+     if (aConn != null) {  
+    	 	IDatabaseConnParams cp = aConn.getConnParams();
+    	 		String dbUrl = cp.getDbUrl();  String dbLogin = cp.getLogin();  String dbPassw = cp.getPassw();
+    	 	DestroyConnect(aConn);
+    	 	aQuery = PrepareConnect(true, aOwnerID, dbUrl, dbLogin, dbPassw,  useConnProps, aTimeout, aLocale, aTimeZoneOffset);      
+     }
+     return aQuery;
+ }
 
 
-public void DestroyConnections(String aDbName) throws Exception {
-	poolDeleteAllConn(aDbName);
-}
+ public void DestroyConnections(String aDbName) throws Exception {
+ 	poolDeleteAllConn(aDbName);
+ }
 
 
-public void ExecQuery(boolean aIsStoredProcCall, IDatabaseQuery aQuery, Class aResultRowClass, List aResults, Locale aLocale, long aTimeZoneOffset) throws Exception {
+ public void ExecQuery(boolean aIsStoredProcCall, IDatabaseQuery aQuery, Class aResultRowClass, List aResults, Locale aLocale, long aTimeZoneOffset) throws Exception {
      IDatabaseConnection aConn = aQuery.getConn();
      boolean ConnectWasReserved = false;
 
@@ -350,33 +359,33 @@ public void ExecQuery(boolean aIsStoredProcCall, IDatabaseQuery aQuery, Class aR
    }
 
 
-public void BeginTran(IDatabaseConnection conn, String aSQL) throws Exception {
-	_BeginTran(conn, aSQL);
-}
+ public void BeginTran(IDatabaseConnection conn, String aSQL) throws Exception {
+ 	_BeginTran(conn, aSQL);
+ }
 
-public abstract boolean getIsAutoCommit();
+ public abstract boolean getIsAutoCommit();
 
-public abstract boolean getIsReadOnly();
+ public abstract boolean getIsReadOnly();
 
-public abstract  int getDefaultTransactionIsolation();
+ public abstract  int getDefaultTransactionIsolation();
 
-protected void _BeginTran(IDatabaseConnection conn, String aSQL) throws Exception {
-    if (conn != null) conn.BeginTran(aSQL);
-    else Util.RaiseUException("sqlConnection object is null!");
-}
-
-public void CommitTran(IDatabaseConnection conn) throws Exception {
-     if (conn != null) conn.CommitTran();
+ protected void _BeginTran(IDatabaseConnection conn, String aSQL) throws Exception {
+     if (conn != null) conn.BeginTran(aSQL);
      else Util.RaiseUException("sqlConnection object is null!");
-   }
+ }
 
-public void RollbackTran(IDatabaseConnection conn) throws Exception {
-     if (conn != null) conn.RollbackTran();
-     else Util.RaiseUException("sqlConnection object is null!");
-   }
+ public void CommitTran(IDatabaseConnection conn) throws Exception {
+      if (conn != null) conn.CommitTran();
+      else Util.RaiseUException("sqlConnection object is null!");
+    }
+
+ public void RollbackTran(IDatabaseConnection conn) throws Exception {
+      if (conn != null) conn.RollbackTran();
+      else Util.RaiseUException("sqlConnection object is null!");
+    }
 
 
-public boolean PingConnection(IDatabaseConnection conn) {
+ public boolean PingConnection(IDatabaseConnection conn) {
       boolean res = false;
       try {
     	  if (conn != null) {
@@ -390,35 +399,33 @@ public boolean PingConnection(IDatabaseConnection conn) {
       return res;
    }
 
-public boolean getSQLToLowerCase() { return sqlToLowerCase; }
+ public boolean getSQLToLowerCase() { return sqlToLowerCase; }
 
-public boolean getUseOldOwnExistingSessionConnection() { return poolUseOldOwnExistingSessionConnection; }
-public void setUseOldOwnExistingSessionConnection(boolean value) { poolUseOldOwnExistingSessionConnection = value; }
+ public boolean getUseOldOwnExistingSessionConnection() { return poolUseOldOwnExistingSessionConnection; }
+ public void setUseOldOwnExistingSessionConnection(boolean value) { poolUseOldOwnExistingSessionConnection = value; }
 
-public abstract String getPingQueryText();
+ public abstract String getPingQueryText();
 
-public abstract char   getQuoteChar();
+ public abstract char   getQuoteChar();
 
-public abstract String BuildStoredProcExecSQL( String aSPName, Properties params, String[] paramNames );
+ public abstract String BuildStoredProcExecSQL( String aSPName, Properties params, String[] paramNames );
 
-public abstract int      getMaxSPParamsCount();
+ public abstract int      getMaxSPParamsCount();
 
-public abstract String getNullWord();
+ public abstract String getNullWord();
 
-public abstract String replaceSpecialSymbols(String str);
+ public abstract String replaceSpecialSymbols(String str);
 
-public abstract String getDateTimeStr(long Time);
+ public abstract String getDateTimeStr(long Time);
 
-public abstract String getDateStr(long Time);
+ public abstract String getDateStr(long Time);
 
-public abstract String getTimeStr(long Time);
+ public abstract String getTimeStr(long Time);
 
-public abstract String getShutdownText(int mode);
+ public abstract String getShutdownText(int mode);
 
-public void destroy() {
-	
+ public void destroy() {
+ 	
+ }
+
 }
-
-}
-
-
