@@ -1,5 +1,9 @@
 # UDB Connection Library
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://github.com/yabjob/udbconnectionlib/actions/workflows/ci.yml/badge.svg)](https://github.com/yabjob/udbconnectionlib/actions/workflows/ci.yml)
+[![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://openjdk.org/)
+
 A small JDBC abstraction and custom connection-pooling library for **MySQL**, **MariaDB**, and **HSQLDB**.
 
 > **Project status:** legacy code being prepared for community maintenance. Review `docs/CODE_REVIEW.md` before production use.
