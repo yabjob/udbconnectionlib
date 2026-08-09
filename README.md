@@ -47,6 +47,14 @@ After publishing a release, consumers can use:
 
 ## Minimal example
 
+> **Note:** in practice this library is used almost exclusively to call
+> **stored procedures**, not ad-hoc SELECT/CRUD statements. See
+> [Calling stored procedures](docs/API_GUIDE.md#calling-stored-procedures) in
+> the API guide for the primary usage pattern, with examples for each
+> `ExecSP*` variant. The SELECT example below still applies (and works the
+> same way for procedures that return rows), but most real call sites look
+> like the stored-procedure examples, not this one.
+
 ```java
 import java.util.List;
 import java.util.Locale;
@@ -84,8 +92,9 @@ try {
 }
 ```
 
-See [`examples/`](examples/) for complete SELECT and transaction examples. Credentials
-in those examples are read from environment variables.
+See [`examples/`](examples/) for complete SELECT, stored-procedure, and
+transaction examples. Credentials in those examples are read from environment
+variables.
 
 ## Generate API documentation
 
